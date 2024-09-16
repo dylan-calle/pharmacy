@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .link-parent {
+    @apply grid grid-rows-[max-content_0fr]
+    overflow-hidden transition-[grid-template-rows]
+    cursor-pointer;
+  }
+
+  .link-child {
+    @apply overflow-hidden ml-3 border-spacing-1 border-gray-400;
+  }
+}
