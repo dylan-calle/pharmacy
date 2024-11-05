@@ -1,9 +1,8 @@
-import { getConnection } from "./../database/database.js";
+import { getConnection as connection } from "./../database/database.js";
 
 const getRawMaterial = async (req, res) => {
   try {
-    const connection = await getConnection;
-    const result = await connection.query("SELECT * FROM type_raw_material WHERE id>210;");
+    const result = await connection.query("SELECT * FROM type_raw_material WHERE id>210 AND status = 1;");
     res.json(result);
   } catch (error) {
     res.status(500);
@@ -12,7 +11,6 @@ const getRawMaterial = async (req, res) => {
 };
 const getRawMaterialExpectId = async (req, res) => {
   try {
-    const connection = await getConnection;
     const result = await connection.query(
       "SELECT name_raw_material, measurement, id_raw FROM type_raw_material WHERE id>210;"
     );
@@ -25,7 +23,6 @@ const getRawMaterialExpectId = async (req, res) => {
 
 const getGreaterIdRaw = async (req, res) => {
   try {
-    const connection = await getConnection;
     const result = await connection.query(
       "SELECT id_raw FROM type_raw_material WHERE id >= ALL (SELECT id FROM type_raw_material);"
     );
@@ -47,7 +44,7 @@ const addRawMaterial = async (req, res) => {
       name_raw_material: name_raw_material.trim(),
       measurement,
     };
-    const connection = await getConnection;
+
     await connection.query("INSERT INTO type_raw_material SET ?", rawMaterial);
     res.json({ message: "Material agregado" });
   } catch (error) {
@@ -63,8 +60,6 @@ const existsRawMaterial = async (req, res) => {
     if (name_raw_material === undefined) {
       return res.status(400).json({ message: "Bad Request. Please fill all field." });
     }
-
-    const connection = await getConnection;
 
     const query = "SELECT name_raw_material FROM type_raw_material WHERE name_raw_material LIKE ?";
     const [results] = await connection.query(query, [name_raw_material.trim()]);
@@ -83,7 +78,6 @@ const existsNotSameRawMaterial = async (req, res) => {
       res.status(400).json({ message: "Bad Request. Please fill all field." });
     }
 
-    const connection = await getConnection;
     const query = "SELECT name_raw_material FROM type_raw_material WHERE name_raw_material LIKE ? && id <> ?";
     const [results] = await connection.query(query, [name_raw_material, id]);
     results.length > 0 ? res.json({ response: true }) : res.json({ response: false });
@@ -101,7 +95,6 @@ const updateRawMaterial = async (req, res) => {
       return res.status(400).send("El formato de datos no es correcto, contacte con el admin");
     }
 
-    const connection = await getConnection;
     while (i < modifiedData.length) {
       const { name_raw_material, measurement, id } = modifiedData[i];
       if (!name_raw_material || !measurement || !id) {
@@ -119,43 +112,46 @@ const updateRawMaterial = async (req, res) => {
 };
 const deleteRawMaterial = async (req, res) => {
   try {
-    let i = 0;
     let idsToDelete = [...req.body];
-    console.log("idsToDeleteArray", idsToDelete);
+
     if (!Array.isArray(idsToDelete)) {
       return res.status(400).send("El formato de datos no es correcto, contacte con el admin");
     }
-    // if (
-    //   name_raw_material === undefined ||
-    //   measurement === undefined ||
-    //   id === undefined
-    // ) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Bad Request. Please fill all field." });
-    // }
-    const connection = await getConnection;
-    while (i < idsToDelete.length) {
+
+    for (let i = 0; i < idsToDelete.length; i++) {
       const { id } = idsToDelete[i];
       if (!id) {
         return res.status(400).json({ error: "Formato de datos incorrecto" });
       }
-      console.log("DELETEFROM", [id]);
-      const query = "DELETE FROM type_raw_material WHERE id = ?";
-      await connection.query(query, [id]);
-      i = i + 1;
+
+      // Verificar si existen referencias en inserts_raw_material
+      const checkReferencesQuery = "SELECT COUNT(*) AS count FROM inserts_raw_material WHERE id_raw_material = ?";
+      const [result] = await connection.query(checkReferencesQuery, [id]);
+
+      if (result[0].count > 0) {
+        // Si hay referencias, realizar Soft Delete
+        const softDeleteQuery = "UPDATE type_raw_material SET status = 0 WHERE id = ?";
+        await connection.query(softDeleteQuery, [id]);
+        console.log(`Soft delete aplicado a type_raw_material con id ${id}`);
+      } else {
+        // Si no hay referencias, eliminar el registro
+        const deleteQuery = "DELETE FROM type_raw_material WHERE id = ?";
+        await connection.query(deleteQuery, [id]);
+        console.log(`Registro eliminado en type_raw_material con id ${id}`);
+      }
     }
 
-    res.json("Registro borrado");
+    res.json("Proceso de eliminación completado");
   } catch (error) {
     return res.status(500).send(error.message);
   }
 };
+
 const getUser = async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
 
   try {
-    const connection = await getConnection; // Llama a getConnection como una función
+    // Llama a getConnection como una función
     jwt.verify(token, JWT_SECRET, async (err, decoded) => {
       if (err) {
         return res.status(401).send("Unauthorized");

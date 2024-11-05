@@ -110,6 +110,7 @@ export default function Order() {
           completed: "",
         });
         setBlankInputs();
+        setListNeededMaterial(null);
       })
       .catch((err) => console.log("error", err));
   };
@@ -227,14 +228,16 @@ export default function Order() {
   }, [seeWorkList, isSeeMoreModalOpen]);
   const [listNedeedMaterial, setListNeededMaterial] = useState(null);
   useEffect(() => {
-    axios
-      .post(`${url}addOrder/getNeededMaterial`, { id: data.id_product })
-      .then((res) => {
-        console.log("res.data[0]", res.data[0]);
-        setListNeededMaterial(res.data[0]);
-      })
-      .catch((err) => console.error(err));
-  }, [data]);
+    if (data.id_product !== "") {
+      axios
+        .post(`${url}addOrder/getNeededMaterial`, { id: data.id_product })
+        .then((res) => {
+          console.log("res.data[0]", res.data[0]);
+          setListNeededMaterial(res.data[0]);
+        })
+        .catch((err) => console.error(err));
+    }
+  }, [data.id_product]);
   function formatISODate(isoDateString) {
     // Crear un objeto Date a partir de la cadena ISO
     const date = new Date(isoDateString);
@@ -951,7 +954,6 @@ export default function Order() {
                         scope="col"
                         className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        {" "}
                         Necesario
                       </th>
 
@@ -966,14 +968,14 @@ export default function Order() {
                   <tbody>
                     {listNedeedMaterial !== null &&
                       listNedeedMaterial.map((item, index) => (
-                        <tr>
+                        <tr key={`${index}`}>
                           <td className="px-3 py-1 whitespace-nowrap text-sm text-gray-500">
                             {item.name_raw_material}
                           </td>
                           <td className="px-3 py-1 whitespace-nowrap text-sm text-gray-500">{`${item.raw_quantity} ${item.measurement}`}</td>
-                          <td className="px-3 py-1 whitespace-nowrap text-sm text-gray-500">{`${
+                          <td className="px-3 py-1 whitespace-nowrap text-sm text-gray-500">{`${(
                             item.needed_quantity * data.quantity
-                          } ${item.measurement}`}</td>
+                          ).toFixed(2)} ${item.measurement}`}</td>
 
                           <td
                             className={`px-3 py-1 whitespace-nowrap text-sm font-semibold ${
@@ -981,7 +983,9 @@ export default function Order() {
                                 ? "text-red-600"
                                 : "text-gray-500"
                             } text-right`}
-                          >{`${item.raw_quantity - item.needed_quantity * data.quantity} ${item.measurement}`}</td>
+                          >{`${(item.raw_quantity - item.needed_quantity * data.quantity).toFixed(2)} ${
+                            item.measurement
+                          }`}</td>
                         </tr>
                       ))}
                   </tbody>

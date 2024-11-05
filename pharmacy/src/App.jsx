@@ -22,7 +22,7 @@ function Layout({ children }) {
   return (
     <div className="flex bg-slate-50 w-[100%]">
       <Menu />
-      <div className="content w-[100%]">{children}</div>
+      <div className="content w-[100%] overflow-auto">{children}</div>
     </div>
   );
 }

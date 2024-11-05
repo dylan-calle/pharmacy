@@ -49,7 +49,7 @@ export default function Menu() {
   return (
     <div
       className={`sticky top-0 h-screen bg-blue-950 flex flex-col justify-between duration-300 ${
-        !isNavOpen ? "w-0" : "w-60"
+        !isNavOpen ? "w-0 " : "sm:w-[16rem] w-72 overflow-y-auto custom-scrollbar overflow-x-hidden"
       }`}
     >
       <button

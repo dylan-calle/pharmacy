@@ -14,7 +14,7 @@ const auth = async (req, res) => {
         if (err) throw err;
         if (match) {
           const accessToken = jwt.sign({ id: results[0][0].id, role: results[0][0].role }, JWT_SECRET, {
-            expiresIn: "15m",
+            expiresIn: "59m",
           });
           const refreshToken = jwt.sign({ id: results[0][0].id, role: results[0][0].role }, JWT_REFRESH, {
             expiresIn: "1d",

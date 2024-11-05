@@ -1,9 +1,8 @@
-import { getConnection } from "../database/database.js";
+import { getConnection as connection } from "../database/database.js";
 
 const getProducts = async (req, res) => {
   const query = "SELECT id, name_product, measurement, prescription_id FROM type_product WHERE id>3";
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
 
     res.json(results);
@@ -15,7 +14,6 @@ const getProducts = async (req, res) => {
 const getClients = async (req, res) => {
   const query = "SELECT id, name FROM clients";
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
     res.json(results);
   } catch (err) {
@@ -26,7 +24,6 @@ const addClient = async (req, res) => {
   const { name, ci } = req.body;
   const query = "INSERT INTO clients (name, ci) VALUES (?,?)";
   try {
-    const connection = getConnection;
     await connection.query(query, [name, ci]);
     res.status(201).send("Client successfully created");
   } catch (err) {
@@ -36,7 +33,6 @@ const addClient = async (req, res) => {
 const getDoctors = async (req, res) => {
   const query = "SELECT id, name FROM doctors";
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
     res.json(results);
   } catch {
@@ -47,7 +43,6 @@ const addDoctor = async (req, res) => {
   const { name, sex, whatever } = req.body;
   const query = "INSERT INTO doctors (name, sex, whatever) VALUES (?,?,?)";
   try {
-    const connection = getConnection;
     await connection.query(query, [name, sex, whatever]);
     res.status(201).send("Doctor successfully created!");
   } catch (err) {
@@ -57,7 +52,6 @@ const addDoctor = async (req, res) => {
 const getNumber = async (req, res) => {
   const query = "SELECT id FROM work_order WHERE id>= ALL (SELECT id FROM work_order)";
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
     res.json(results);
   } catch (err) {
@@ -70,7 +64,6 @@ const addOrder = async (req, res) => {
   const query =
     "INSERT INTO work_order (id_client, id_doctor, id_product, quantity, u_price, advance, payment_method_id) VALUES (?,?,?,?,?,?,?)";
   try {
-    const connection = getConnection;
     await connection.query(query, [
       id_client,
       id_doctor,
@@ -86,10 +79,9 @@ const addOrder = async (req, res) => {
   }
 };
 const getNeededMaterial = async (req, res) => {
-  console.log("holaa");
   const { id } = req.body;
   console.log(id);
-  const connection = getConnection;
+
   if (!id) {
     return res.status(400).send({ error: "ID is required" });
   }
@@ -110,7 +102,6 @@ const updateOrder = async (req, res) => {
   const query =
     "UPDATE work_order SET id_client = ?, id_doctor = ?, id_product = ?, quantity = ?, u_price = ?, advance = ?, payment_method_id = ?, completed = ? WHERE id = ?";
   try {
-    const connection = getConnection;
     await connection.query(query, [
       id_client,
       id_doctor,
@@ -132,7 +123,6 @@ const getOrders = async (req, res) => {
     "SELECT work_order.id, clients.name AS client_name, doctors.name AS doctor_name, type_product.name_product, quantity, u_price, advance, payment_method.payment_method, work_order.date, completed FROM work_order INNER JOIN doctors ON doctors.id = work_order.id_doctor INNER JOIN clients ON clients.id = work_order.id_client INNER JOIN type_product ON type_product.id = work_order.id_product INNER JOIN payment_method ON work_order.payment_method_id = payment_method.id";
 
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
     res.json(results);
   } catch {
@@ -143,7 +133,7 @@ const getOrdersID = async (req, res) => {
   const { id } = req.body;
   const query =
     "SELECT id, id_client, id_doctor, id_product, quantity, u_price, advance, payment_method_id, completed FROM work_order WHERE id=?";
-  const connection = getConnection;
+
   try {
     const results = await connection.query(query, [id]);
     res.json(results);
@@ -156,7 +146,6 @@ const getPreparedOrders = async (req, res) => {
     "SELECT work_order.id, clients.name AS client_name, doctors.name AS doctor_name, type_product.name_product, quantity, u_price, advance, payment_method.payment_method, work_order.date, completed FROM work_order INNER JOIN doctors ON doctors.id = work_order.id_doctor INNER JOIN clients ON clients.id = work_order.id_client INNER JOIN type_product ON type_product.id = work_order.id_product INNER JOIN payment_method ON work_order.payment_method_id = payment_method.id WHERE completed = 1";
 
   try {
-    const connection = getConnection;
     const results = await connection.query(query);
     res.json(results);
   } catch {

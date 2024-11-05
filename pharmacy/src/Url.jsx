@@ -1,4 +1,4 @@
-export const url = "http://192.168.0.116:8081/api/";
+export const url = "http://localhost:8081/api/";
 /*DELIMITER //
 CREATE DEFINER=`root`@`localhost` TRIGGER `before_insert_type_product` BEFORE INSERT ON `type_product` FOR EACH ROW BEGIN
     DECLARE new_id INT;
