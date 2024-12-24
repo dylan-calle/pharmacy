@@ -1,11 +1,8 @@
-import { getConnection } from "./../database/database.js";
+import { getConnection as connection } from "./../database/database.js";
 import { getCurrentTimestamp } from "./../functions/function1.js";
 const getMaterial = async (req, res) => {
   try {
-    const connection = await getConnection;
-    const result = await connection.query(
-      "SELECT * FROM type_raw_material WHERE id>210;"
-    );
+    const result = await connection.query("SELECT * FROM type_raw_material WHERE id>210 AND status = 1;");
     res.json(result);
   } catch (error) {
     res.status(500);
@@ -14,7 +11,6 @@ const getMaterial = async (req, res) => {
 };
 const getNumber = async (req, res) => {
   try {
-    const connection = await getConnection;
     const query =
       "SELECT DISTINCT n_purchase FROM inserts_raw_material WHERE n_purchase >= ALL (SELECT n_purchase FROM inserts_raw_material)";
     const result = await connection.query(query);
@@ -29,19 +25,15 @@ const addRawAndQuantity = async (req, res) => {
   try {
     let modifiedData = [...req.body];
     if (!Array.isArray(modifiedData)) {
-      return res
-        .status(400)
-        .send("El formato de datos no es correcto, contacte con el admin");
+      return res.status(400).send("El formato de datos no es correcto, contacte con el admin");
     }
 
-    const connection = await getConnection;
     //const nowTime = getCurrentTimestamp();
 
     let i = 0;
 
     while (i < modifiedData.length) {
-      const { number, id_raw_material, quantity, cost, n_purchase } =
-        modifiedData[i];
+      const { number, id_raw_material, quantity, cost, n_purchase } = modifiedData[i];
       if (
         number === undefined ||
         id_raw_material === undefined ||

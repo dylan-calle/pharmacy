@@ -61,19 +61,33 @@ export default function AddReceta() {
   //Get the options for the DropDowns from the database
   const [options, setOptions] = useState([]);
   const [optionsProducts, setOptionProducts] = useState([]);
+  const [optionsInitial, setOptionsInitial] = useState([]);
   const renderOptions = () => {
+    const editedList = optionsInitial.filter(
+      ({ id }) => !fields.some((element) => element.id_raw_material === id)
+    );
+    console.log("EditedList", editedList);
+    setOptions(editedList);
+  };
+  useEffect(() => {
+    axios
+      .get(url + "addPrescription/getProducts/")
+      .then((res) => {
+        setOptionProducts(res.data[0]);
+      })
+      .catch((err) => console.log(err));
+
     axios
       .get(url + "addPrescription/getMaterial/")
       .then((res) => {
         setOptions(res.data[0]);
+        setOptionsInitial(res.data[0]);
       })
       .catch((err) => console.log(err));
-    axios
-      .get(url + "addPrescription/getProducts/")
-      .then((res) => setOptionProducts(res.data[0]))
-      .catch((err) => console.log(err));
-  };
-  useEffect(renderOptions, []); //just get the data once the page is reloaded
+  }, []);
+  useEffect(() => {
+    renderOptions();
+  }, [selectedMeasurementOption]); //just get the data once the page is reloaded
   //
   //INPUTS
   const handleInputChange = (index, e) => {

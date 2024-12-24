@@ -12,7 +12,7 @@ const getProducts = async (req, res) => {
 
 const getMaterial = async (req, res) => {
   try {
-    const result = await connection.query("SELECT * FROM type_raw_material WHERE id>210;");
+    const result = await connection.query("SELECT * FROM type_raw_material WHERE id>210 AND status = 1;");
     res.json(result);
   } catch (error) {
     res.status(500);

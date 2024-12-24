@@ -1,14 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { getConnection } from "./../database/database.js";
+import { getConnection as connection } from "./../database/database.js";
 import { JWT_SECRET, JWT_REFRESH } from "../database/config.js";
 const auth = async (req, res) => {
   const { username, password } = req.body;
   console.log("entro alguienn");
   try {
-    const connection = await getConnection;
-
     const results = await connection.query("SELECT * FROM users WHERE username = ?", username);
+    console.log(results);
     if (results.length > 0) {
       bcrypt.compare(password, results[0][0].password, (err, match) => {
         if (err) throw err;
@@ -53,7 +52,6 @@ const getRole = async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
 
   try {
-    const connection = await getConnection; // Llama a getConnection como una función
     jwt.verify(token, JWT_SECRET, async (err, decoded) => {
       if (err) {
         return res.status(401).send("Unauthorized");
@@ -75,5 +73,20 @@ const getRole = async (req, res) => {
     res.status(401).send("Unauthorized");
   }
 };
+const register = async (req, res) => {
+  const { username, password, role } = req.body;
+  if (!username || !password || !role) {
+    res.status(400);
+    return;
+  }
+  try {
+    const query = "INSERT INTO users (username, password, role) VALUES (?,?,?)";
+    const [results] = await connection.query(query, [username, password, role]);
 
-export const methods = { auth, refreshToken, logout, getRole };
+    results.length > 0 ? res.json({ response: true }) : res.json({ response: false });
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+export const methods = { auth, refreshToken, logout, getRole, register };

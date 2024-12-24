@@ -38,7 +38,7 @@ export default function DropDownPrescription({ name, options, variableState, fun
   };
 
   const handleBlur = () => {
-    setTimeout(() => setShowOptions(false), 50);
+    setTimeout(() => setShowOptions(false), 150);
     handleClickImg(false); // Make sure the image comes to normallity
   };
 

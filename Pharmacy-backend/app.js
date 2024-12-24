@@ -13,7 +13,13 @@ import addOrderRouters from "./routes/addOrder.routes.js";
 import addSalesRouters from "./routes/addSales.routes.js";
 
 const app = express();
-app.use(cors());
+//app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Origen específico permitido
+    credentials: true, // Permite credenciales en la solicitud
+  })
+);
 
 // Settings
 app.set("port", 8081);

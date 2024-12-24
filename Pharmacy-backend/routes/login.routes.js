@@ -6,4 +6,5 @@ router.post("/login", loginController.auth);
 router.post("refresh-token", loginController.refreshToken);
 router.get("/getRole", loginController.getRole);
 router.post("/logout", loginController.logout);
+router.post("/register", loginController.register);
 export default router;

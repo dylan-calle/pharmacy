@@ -136,7 +136,7 @@ export default function SeeReceta() {
         <Link to="/add-receta">
           <button
             type="button"
-            className="rounded-md ml-6 bg-indigo-700 px-7 py-3 text-base font-semibold border-2 text-white shadow-sd hover:bg-indigo-500 focus-visible:outline focus-visible:outline-0 focus-visible:outline-offset-1 focus-visible:outline-indigo-600"
+            className="flex rounded-md ml-6 bg-indigo-700 px-6 py-3 text-base font-semibold border-2 text-white shadow-sd hover:bg-indigo-500 focus-visible:outline focus-visible:outline-0 focus-visible:outline-offset-1 focus-visible:outline-indigo-600"
           >
             Agregar Receta
           </button>

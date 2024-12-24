@@ -81,9 +81,18 @@ export default function AddMerma() {
   //INPUTS
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
-    const newInputs = [...fields];
-    newInputs[index][name] = value;
-    setFields(newInputs);
+    //control for negative values
+    if (name === "quantity" || name === "cost") {
+      if (value >= 0) {
+        const newInputs = [...fields];
+        newInputs[index][name] = value;
+        setFields(newInputs);
+      }
+    } else {
+      const newInputs = [...fields];
+      newInputs[index][name] = value;
+      setFields(newInputs);
+    }
   };
   //THRASH
   const [showThrashFirst, setShowThrashFirst] = useState(false); //this to show the thrash icon when there are more than 2 elements
@@ -262,12 +271,15 @@ export default function AddMerma() {
 
                       <div className="sm:col-span-2 mt-2 rounded-md bg-white">
                         <div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
+                          <span className="flex w-[10%] select-none items-center justify-end text-gray-500 sm:text-sm">
+                            -
+                          </span>
                           <input
                             name="quantity"
                             value={fields[index].quantity}
-                            type="text"
+                            type="number"
                             autoComplete="off"
-                            className="block w-[85%] bg-transparent border-0 py-1.5 pr-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                            className="block pl-1 w-[75%] bg-transparent border-0 py-1.5 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
                             onChange={(e) => handleInputChange(index, e)}
                           />
                           <span className="flex w-[15%] select-none items-center justify-center text-gray-500 sm:text-sm">
@@ -285,7 +297,7 @@ export default function AddMerma() {
                           <input
                             name="cost"
                             value={fields[index].cost}
-                            type="text"
+                            type="number"
                             autoComplete="off"
                             className="text-right block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 "
                             onChange={(e) => handleInputChange(index, e)}

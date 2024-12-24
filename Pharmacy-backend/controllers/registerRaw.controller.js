@@ -88,28 +88,43 @@ const existsNotSameRawMaterial = async (req, res) => {
 };
 const updateRawMaterial = async (req, res) => {
   try {
-    let i = 0;
+    const modifiedData = req.body;
 
-    let modifiedData = [...req.body];
     if (!Array.isArray(modifiedData)) {
-      return res.status(400).send("El formato de datos no es correcto, contacte con el admin");
+      return res.status(400).json({ error: "El formato de datos no es correcto, contacte con el admin" });
     }
 
-    while (i < modifiedData.length) {
-      const { name_raw_material, measurement, id } = modifiedData[i];
-      if (!name_raw_material || !measurement || !id) {
-        return res.status(400).json({ error: "Formato de datos incorrecto" });
-      }
-      const query = "UPDATE type_raw_material SET name_raw_material = ?, measurement = ? WHERE id = ?";
-      await connection.query(query, [name_raw_material, measurement, id]);
-      i = i + 1;
+    // Validate all entries
+    const invalidEntry = modifiedData.find(
+      ({ name_raw_material, measurement, id }) => !name_raw_material || !measurement || !id
+    );
+
+    if (invalidEntry) {
+      return res.status(400).json({ error: "Formato de datos incorrecto" });
     }
 
-    res.json("Registro actualizado");
+    // Build queries
+    const queries = modifiedData.map(({ name_raw_material, measurement, id, raw_quantity }) => {
+      const query =
+        raw_quantity === undefined
+          ? "UPDATE type_raw_material SET name_raw_material = ?, measurement = ? WHERE id=?"
+          : "UPDATE type_raw_material SET name_raw_material = ?, measurement = ?, raw_quantity = ? WHERE id=?";
+      const params =
+        raw_quantity === undefined
+          ? [name_raw_material, measurement, id]
+          : [name_raw_material, measurement, raw_quantity, id];
+      return { query, params };
+    });
+    console.log("queries", queries);
+    // Execute all queries in parallel
+    await Promise.all(queries.map(({ query, params }) => connection.query(query, params)));
+
+    res.json({ message: "Registro actualizado" });
   } catch (error) {
-    return res.status(500).send(error.message);
+    res.status(500).json({ error: error.message });
   }
 };
+
 const deleteRawMaterial = async (req, res) => {
   try {
     let idsToDelete = [...req.body];
@@ -129,13 +144,10 @@ const deleteRawMaterial = async (req, res) => {
       const [result] = await connection.query(checkReferencesQuery, [id]);
 
       if (result[0].count > 0) {
-        // Si hay referencias, realizar Soft Delete
-        const softDeleteQuery = "UPDATE type_raw_material SET status = 0 WHERE id = ?";
-        await connection.query(softDeleteQuery, [id]);
-        console.log(`Soft delete aplicado a type_raw_material con id ${id}`);
+        // Si hay referencias, mandar error
       } else {
-        // Si no hay referencias, eliminar el registro
-        const deleteQuery = "DELETE FROM type_raw_material WHERE id = ?";
+        // Si no hay referencias, realizar Soft Delete
+        const deleteQuery = "UPDATE type_raw_material SET status = 0 WHERE id = ?";
         await connection.query(deleteQuery, [id]);
         console.log(`Registro eliminado en type_raw_material con id ${id}`);
       }
@@ -144,6 +156,19 @@ const deleteRawMaterial = async (req, res) => {
     res.json("Proceso de eliminación completado");
   } catch (error) {
     return res.status(500).send(error.message);
+  }
+};
+
+const verifyIfReferencesofRawExists = async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const checkReferencesQuery = "SELECT COUNT(*) AS count FROM inserts_raw_material WHERE id_raw_material = ?";
+    const [result] = await connection.query(checkReferencesQuery, [id]);
+
+    return res.json(result);
+  } catch (err) {
+    console.error(err);
   }
 };
 
@@ -182,5 +207,6 @@ export const metodos = {
   getRawMaterialExpectId,
   updateRawMaterial,
   deleteRawMaterial,
+  verifyIfReferencesofRawExists,
   existsNotSameRawMaterial,
 };

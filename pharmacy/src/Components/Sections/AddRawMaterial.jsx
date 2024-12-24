@@ -81,9 +81,18 @@ export default function AddRawMaterial() {
   //INPUTS
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
-    const newInputs = [...fields];
-    newInputs[index][name] = value;
-    setFields(newInputs);
+    //control for negative values
+    if (name === "quantity" || name === "cost") {
+      if (value >= 0) {
+        const newInputs = [...fields];
+        newInputs[index][name] = value;
+        setFields(newInputs);
+      }
+    } else {
+      const newInputs = [...fields];
+      newInputs[index][name] = value;
+      setFields(newInputs);
+    }
   };
   //THRASH
   const [showThrashFirst, setShowThrashFirst] = useState(false);
@@ -258,7 +267,7 @@ export default function AddRawMaterial() {
                           <input
                             name="quantity"
                             value={fields[index].quantity}
-                            type="text"
+                            type="number"
                             autoComplete="off"
                             className="block w-[85%] bg-transparent rounded-md border-0 py-1.5 pr-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
                             onChange={(e) => handleInputChange(index, e)}

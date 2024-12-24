@@ -14,6 +14,25 @@ import exportToExcel from "./../../exports/RawMaterialExportXLSX.jsx";
 function isObjectEmpty(obj) {
   return Object.keys(obj).length === 0;
 }
+const conversionRates = {
+  g: { mg: 1000, µg: 1000000, l: 1, ml: 1 },
+  mg: { g: 1 / 1000, µg: 1000, l: 1, ml: 1 },
+  µg: { g: 1 / 1000000, mg: 1 / 1000, l: 1, ml: 1 },
+  l: { ml: 1000, g: 1, µg: 1, mg: 1 },
+  ml: { l: 1 / 1000, g: 1, µg: 1, mg: 1 },
+};
+
+const converter = (initialUnit, finalUnit, initialQuantity) => {
+  if (initialUnit === finalUnit) return initialQuantity;
+
+  const conversionRate = conversionRates[initialUnit] && conversionRates[initialUnit][finalUnit];
+
+  if (conversionRate) {
+    return initialQuantity * conversionRate;
+  } else {
+    throw new Error("Conversion not supported between the given units.");
+  }
+};
 export default function RegisterRawMaterial() {
   const options = ["g", "mg", "µg", "ml", "l"];
   const [optionsModal, setOptionsModal] = useState(["g", "g", "mg", "µg", "ml", "l"]);
@@ -48,7 +67,7 @@ export default function RegisterRawMaterial() {
       const token = localStorage.getItem("accessToken");
       if (token) {
         try {
-          console.log("token ", token);
+          //console.log("token ", token);
           const response = await axios.get(url + "login/getRole", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -104,6 +123,7 @@ export default function RegisterRawMaterial() {
         return newItems;
       }
     });
+    console.log("element deleted");
   };
   const addModified = (object) => {
     const newObject = {
@@ -144,9 +164,11 @@ export default function RegisterRawMaterial() {
       }
     }
   }, [submited, errors]);
+
   useEffect(() => {
     if (submitedSave) {
       if (errorsList.every(isObjectEmpty)) {
+        console.log(modifiedData);
         axios
           .post(url + "registerRaw/updateRawMaterial/", [...modifiedData])
           .then(() => {
@@ -213,21 +235,51 @@ export default function RegisterRawMaterial() {
     setTargetToDelete(id);
     setIsConfirmationModalOpen(true);
   };
+
   const handleConfirmationCloseModal = (eliminated) => {
     if (eliminated) {
-      //This code is to eliminate this element from the modifiedData in case that the user wanted to edit and then delete but they deleted it with an invalid name
-      const newListModified = [...modifiedData];
-      const index = newListModified.findIndex((item) => item.id === targetToDelete);
+      // This code is to eliminate this element from the modifiedData in case that the user wanted to edit and then delete but they deleted it with an invalid name
+      axios
+        .post(url + "registerRaw/verifyIfReferencesofRawExists", { id: targetToDelete })
+        .then((res) => {
+          if (res.data[0].count === 0) {
+            const newListModified = [...modifiedData];
 
-      newListModified.splice(index, 1);
-      setModifiedData(newListModified);
-      //
-      removeById(targetToDelete); //front delete
-      setIdsToDelete((prev) => [...prev, { id: targetToDelete }]); //back delete
+            const index = newListModified.findIndex((item) => item.id === targetToDelete);
+
+            //if (index !== -1) {
+            newListModified.splice(index, 1);
+            setModifiedData(newListModified);
+            removeById(targetToDelete); // front delete
+            setIdsToDelete((prev) => [...prev, { id: targetToDelete }]); // back delete
+            //}
+          } else {
+            setNewErrorsList((prev) => {
+              const alreadyExists = prev.some((error) => error.id === targetToDelete);
+
+              if (alreadyExists) {
+                // Update the existing object
+                return prev.map((error) =>
+                  error.id === targetToDelete
+                    ? { ...error, name_raw_material: "No puede borrar este elemento" }
+                    : error
+                );
+              }
+
+              // Add a new object if it doesn't exist
+              return [...prev, { id: targetToDelete, name_raw_material: "No puede borrar este elemento" }];
+            });
+          }
+        })
+        .catch((err) => console.error(err))
+        .finally(() => {
+          setIsConfirmationModalOpen(false);
+        });
+    } else {
+      setIsConfirmationModalOpen(false);
     }
-
-    setIsConfirmationModalOpen(false);
   };
+
   const handleEdit = (index, fromDoubleClick) => {
     if (role === "admin") {
       if (isFirstClick[index]) {
@@ -248,6 +300,22 @@ export default function RegisterRawMaterial() {
     }
   };
   const handleChangeModal = (e, index, string, id) => {
+    let finalQuantity;
+    if (string === "measurement") {
+      const initialUnit = listOfRawMaterial[index].measurement;
+      const finalUnit = e.target.value;
+      const initialQuantity = listOfRawMaterial[index].raw_quantity;
+      finalQuantity = converter(initialUnit, finalUnit, initialQuantity);
+
+      const updatedList = listOfRawMaterial;
+      updatedList[index] = {
+        ...updatedList[index], // Copy the current item
+        // measurement: finalUnit,  // Update the measurement
+        raw_quantity: finalQuantity, // Update the raw quantity
+      };
+      setListOfRawMaterial(updatedList);
+    }
+
     const newList = [...listOfRawMaterial];
     newList[index] = { ...newList[index], [string]: e.target.value };
     setListOfRawMaterial(newList);
@@ -257,6 +325,7 @@ export default function RegisterRawMaterial() {
         modifiedData[index2] = {
           ...modifiedData[index2],
           [string]: string === "name_raw_material" ? newList[index].name_raw_material : newList[index].measurement,
+          raw_quantity: finalQuantity,
         };
       }
     });
